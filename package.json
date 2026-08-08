@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "notes-to-tasks": "node --env-file=.env --import tsx src/cli.ts",
-    "demo:dry-run": "npm run notes-to-tasks -- --notes samples/messy-notes.md"
+    "demo:dry-run": "npm run notes-to-tasks -- --notes samples/messy-notes.md",
+    "demo:execute": "npm run notes-to-tasks -- --execute --notes samples/messy-notes.md",
+    "pull-model": "./scripts/pull-model.sh"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

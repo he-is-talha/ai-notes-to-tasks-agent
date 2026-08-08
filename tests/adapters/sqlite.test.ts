@@ -1,6 +1,6 @@
 import { describe, expect, it, afterEach } from "vitest";
 import { createSqliteAdapter, type SqliteAdapter } from "../../src/adapters/sqlite.js";
-import { DEMO_PROJECT_NAMES } from "../../src/adapters/seed.js";
+import { loadProjectNames } from "../../src/adapters/seed.js";
 
 describe("sqlite adapter", () => {
   let adapter: SqliteAdapter;
@@ -12,13 +12,13 @@ describe("sqlite adapter", () => {
   it("seeds demo projects and finds by partial query", async () => {
     adapter = createSqliteAdapter(":memory:");
     const seeded = adapter.seedIfEmpty();
-    expect(seeded).toBe(DEMO_PROJECT_NAMES.length);
+    expect(seeded).toBe(loadProjectNames().length);
     expect(adapter.seedIfEmpty()).toBe(0);
 
-    const found = await adapter.findProject("backend");
+    const found = await adapter.findProject("auth");
     expect(found.ok).toBe(true);
     if (found.ok) {
-      expect(found.data.projectName).toBe("Backend Platform");
+      expect(found.data.projectName).toBe("Authentication");
     }
 
     const payments = await adapter.findProject("Payment");

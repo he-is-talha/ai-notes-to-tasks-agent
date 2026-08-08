@@ -1,17 +1,32 @@
 import type { AppEnv } from "../config/env.js";
+import { createGithubIssuesAdapter } from "./github-issues.js";
 import { createSqliteAdapter, type SqliteAdapter } from "./sqlite.js";
 import type { TaskAdapter } from "./types.js";
 
+export type ClosableTaskAdapter = TaskAdapter & {
+  seedIfEmpty?: () => number;
+  countTasks?: () => number;
+  close?: () => void;
+};
+
 /**
  * Build the configured task adapter.
- * SQLite is the default offline demo path. GitHub Issues is env-gated later.
+ * SQLite is the default offline demo path. GitHub Issues is env-gated.
  */
-export function createAdapter(env: AppEnv): TaskAdapter {
+export function createAdapter(env: AppEnv): ClosableTaskAdapter {
   if (env.adapter === "github") {
-    throw new Error(
-      'ADAPTER=github is not wired yet. Set ADAPTER=sqlite for the local demo.',
-    );
+    if (!env.githubToken || !env.githubOwner || !env.githubRepo) {
+      throw new Error(
+        "ADAPTER=github requires GITHUB_TOKEN, GITHUB_OWNER, and GITHUB_REPO",
+      );
+    }
+    return createGithubIssuesAdapter({
+      token: env.githubToken,
+      owner: env.githubOwner,
+      repo: env.githubRepo,
+    });
   }
+
   return createSqliteAdapter(env.sqlitePath);
 }
 

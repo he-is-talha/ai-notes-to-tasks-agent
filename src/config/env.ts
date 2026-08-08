@@ -8,6 +8,9 @@ export type AppEnv = {
   adapter: "sqlite" | "github";
   sqlitePath: string;
   maxToolCalls: number;
+  githubToken?: string;
+  githubOwner?: string;
+  githubRepo?: string;
 };
 
 function readEnv(env: EnvMap, name: string, fallback: string): string {
@@ -15,6 +18,12 @@ function readEnv(env: EnvMap, name: string, fallback: string): string {
   if (value === undefined || value === "") {
     return fallback;
   }
+  return value;
+}
+
+function readOptional(env: EnvMap, name: string): string | undefined {
+  const value = env[name];
+  if (value === undefined || value === "") return undefined;
   return value;
 }
 
@@ -44,5 +53,8 @@ export function loadEnv(env: EnvMap = process.env): AppEnv {
     adapter: adapterRaw,
     sqlitePath: readEnv(env, "SQLITE_PATH", "data/tasks.db"),
     maxToolCalls: readPositiveInt(env, "MAX_TOOL_CALLS", 6),
+    githubToken: readOptional(env, "GITHUB_TOKEN"),
+    githubOwner: readOptional(env, "GITHUB_OWNER"),
+    githubRepo: readOptional(env, "GITHUB_REPO"),
   };
 }

@@ -10,9 +10,9 @@ import type {
   LlmProvider,
 } from "../../src/llm/types.js";
 
-const NOTES_PATH = path.resolve("samples/messy-notes.md");
+const NOTES_PATH = path.resolve("samples/demo-notes.md");
 
-function scriptedDemoLlm(): LlmProvider {
+function scriptedExecuteLlm(): LlmProvider {
   const responses: ChatResponse[] = [
     {
       message: {
@@ -109,7 +109,7 @@ function scriptedDemoLlm(): LlmProvider {
     {
       message: {
         role: "assistant",
-        content: "Dry-run planned 2 tasks from the meeting notes.",
+        content: "Created 2 tasks.",
       },
       toolCalls: [],
     },
@@ -131,7 +131,7 @@ function scriptedDemoLlm(): LlmProvider {
   };
 }
 
-describe("e2e dry-run from samples/messy-notes.md", () => {
+describe("e2e execute + idempotent re-run", () => {
   let tempDir: string;
 
   afterEach(() => {
@@ -140,74 +140,58 @@ describe("e2e dry-run from samples/messy-notes.md", () => {
     }
   });
 
-  it("plans >=2 creates, writes audit, and does not insert tasks", async () => {
-    tempDir = mkdtempSync(path.join(tmpdir(), "notes-dry-"));
+  it("writes tasks once, then skips duplicates on re-run", async () => {
+    tempDir = mkdtempSync(path.join(tmpdir(), "notes-exec-"));
     const sqlitePath = path.join(tempDir, "tasks.db");
     const auditPath = path.join(tempDir, "runs.jsonl");
-    const runId = "e2e-dry-run-1";
 
-    const result = await runNotesToTasks({
+    const base = {
       notesPath: NOTES_PATH,
-      mode: "dry-run",
+      mode: "execute" as const,
       env: loadEnv({
         ADAPTER: "sqlite",
         SQLITE_PATH: sqlitePath,
         OLLAMA_MODEL: "qwen3.5:4b",
         MAX_TOOL_CALLS: "6",
       }),
-      llm: scriptedDemoLlm(),
-      runId,
-      auditPath,
       sqlitePath,
+      auditPath,
+    };
+
+    const first = await runNotesToTasks({
+      ...base,
+      llm: scriptedExecuteLlm(),
+      runId: "exec-run-a",
     });
 
     try {
-      expect(result.notes.length).toBeGreaterThan(100);
-      expect(result.report.stoppedReason).toBe("completed");
-      expect(result.report.toolCallCount).toBe(4);
+      expect(first.report.stoppedReason).toBe("completed");
+      expect(first.report.toolCallCount).toBe(4);
+      expect(first.taskCountAfter).toBe(2);
+      expect(first.report.duplicateSkips).toBe(0);
 
-      const createIntents = result.report.intendedCalls.filter(
-        (c) => c.tool === "create_task",
-      );
-      expect(createIntents.length).toBeGreaterThanOrEqual(2);
-      expect(result.taskCountAfter).toBe(result.taskCountBefore);
-      expect(result.taskCountAfter).toBe(0);
+      const second = await runNotesToTasks({
+        ...base,
+        llm: scriptedExecuteLlm(),
+        runId: "exec-run-b",
+      });
 
-      const audit = readFileSync(auditPath, "utf8").trim().split("\n");
-      expect(audit.length).toBe(4);
-      expect(
-        audit.every((line) => JSON.parse(line).run_id === runId),
-      ).toBe(true);
+      try {
+        expect(second.taskCountAfter).toBe(2);
+        expect(second.report.duplicateSkips).toBe(2);
+
+        const auditLines = readFileSync(auditPath, "utf8")
+          .trim()
+          .split("\n")
+          .map((line) => JSON.parse(line) as { run_id: string });
+        const runIds = new Set(auditLines.map((e) => e.run_id));
+        expect(runIds.has("exec-run-a")).toBe(true);
+        expect(runIds.has("exec-run-b")).toBe(true);
+      } finally {
+        second.adapter.close?.();
+      }
     } finally {
-      result.adapter.close?.();
+      first.adapter.close?.();
     }
   });
-});
-
-describe("live dry-run demo", () => {
-  const runLive = process.env.RUN_LIVE_OLLAMA === "1";
-
-  it.skipIf(!runLive)(
-    "runs notes-to-tasks dry-run against real Ollama",
-    async () => {
-      const tempDir = mkdtempSync(path.join(tmpdir(), "notes-live-"));
-      const sqlitePath = path.join(tempDir, "tasks.db");
-      const auditPath = path.join(tempDir, "runs.jsonl");
-      try {
-        const result = await runNotesToTasks({
-          notesPath: NOTES_PATH,
-          mode: "dry-run",
-          env: loadEnv(process.env),
-          sqlitePath,
-          auditPath,
-        });
-        expect(result.taskCountAfter).toBe(0);
-        expect(result.report.runId.length).toBeGreaterThan(0);
-        result.adapter.close?.();
-      } finally {
-        rmSync(tempDir, { recursive: true, force: true });
-      }
-    },
-    180_000,
-  );
 });

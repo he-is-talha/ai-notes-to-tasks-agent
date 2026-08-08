@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { createSqliteAdapterFromEnv } from "../adapters/factory.js";
-import type { SqliteAdapter } from "../adapters/sqlite.js";
+import {
+  createAdapter,
+  type ClosableTaskAdapter,
+} from "../adapters/factory.js";
 import { runAgent } from "../agent/loop.js";
 import type { AgentReport } from "../agent/types.js";
 import { createAuditPath } from "../audit/writer.js";
@@ -28,7 +30,7 @@ export type NotesRunResult = {
   taskCountBefore: number;
   taskCountAfter: number;
   auditPath: string;
-  adapter: SqliteAdapter;
+  adapter: ClosableTaskAdapter;
 };
 
 export async function runNotesToTasks(
@@ -39,13 +41,13 @@ export async function runNotesToTasks(
     sqlitePath: input.sqlitePath ?? input.env.sqlitePath,
   };
   const notes = readFileSync(input.notesPath, "utf8");
-  const adapter = createSqliteAdapterFromEnv(env);
-  adapter.seedIfEmpty();
+  const adapter = createAdapter(env);
+  adapter.seedIfEmpty?.();
 
   const runId = input.runId ?? randomUUID();
   const auditPath = input.auditPath ?? createAuditPath(runId);
   const llm = input.llm ?? createLlmProvider(env);
-  const taskCountBefore = adapter.countTasks();
+  const taskCountBefore = adapter.countTasks?.() ?? 0;
 
   const report = await runAgent({
     notes,
@@ -64,7 +66,7 @@ export async function runNotesToTasks(
     report,
     notes,
     taskCountBefore,
-    taskCountAfter: adapter.countTasks(),
+    taskCountAfter: adapter.countTasks?.() ?? taskCountBefore,
     auditPath,
     adapter,
   };

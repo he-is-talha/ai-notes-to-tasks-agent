@@ -12,6 +12,9 @@ describe("loadEnv", () => {
       adapter: "sqlite",
       sqlitePath: "data/tasks.db",
       maxToolCalls: 6,
+      githubToken: undefined,
+      githubOwner: undefined,
+      githubRepo: undefined,
     });
   });
 });
@@ -70,11 +73,13 @@ describe("createLlmProvider", () => {
       model: string;
       tools: unknown[];
       stream: boolean;
+      think: boolean;
       options: { temperature: number };
     };
     expect(body.model).toBe("qwen3.5:4b");
     expect(body.tools).toHaveLength(2);
     expect(body.stream).toBe(false);
+    expect(body.think).toBe(false);
     expect(body.options.temperature).toBe(0.1);
 
     expect(result.toolCalls).toHaveLength(1);

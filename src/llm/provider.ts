@@ -67,6 +67,8 @@ export function createLlmProvider(env: AppEnv): LlmProvider {
           messages: toOllamaMessages(messages),
           tools,
           stream: false,
+          // qwen3.5 thinking mode often skips tools on long prompts
+          think: false,
           options: { temperature: 0.1 },
         }),
       });

@@ -33,7 +33,7 @@ async function main(): Promise<void> {
     });
 
     printRunOutput(result, parsed.mode);
-    result.adapter.close();
+    result.adapter.close?.();
 
     if (result.report.stoppedReason === "model_error") {
       process.exitCode = 1;

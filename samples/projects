@@ -1,0 +1,12 @@
+# Project catalog for samples/messy-notes.md (one name per line).
+# seedIfEmpty() inserts these when the projects table is empty.
+# Edit freely, then use a fresh SQLITE_PATH / empty DB to re-seed.
+
+Payments
+Authentication
+Infrastructure
+Database
+Frontend
+Notifications
+Documentation
+QA

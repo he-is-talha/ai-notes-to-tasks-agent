@@ -1,22 +1,35 @@
-/** Seeded project names for the offline SQLite demo. */
-export const DEMO_PROJECT_NAMES = [
-  "Backend Platform",
-  "Infrastructure",
-  "Payments",
-  "Authentication",
-  "API & Documentation",
-  "Database",
-  "DevOps & CI",
-  "Kubernetes Platform",
-  "QA & Testing",
-  "Frontend",
-  "Customer Notifications",
-  "Search",
-  "Security",
-  "Product Engineering",
-] as const;
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-export type DemoProjectName = (typeof DEMO_PROJECT_NAMES)[number];
+/** Default catalog: samples/projects (one name per line; # comments allowed). */
+export function defaultProjectsFilePath(): string {
+  return path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../samples/projects",
+  );
+}
+
+/**
+ * Parse a projects file into unique non-empty names (order preserved).
+ */
+export function loadProjectNames(filePath: string = defaultProjectsFilePath()): string[] {
+  const text = readFileSync(filePath, "utf8");
+  const seen = new Set<string>();
+  const names: string[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    names.push(trimmed);
+  }
+  if (names.length === 0) {
+    throw new Error(`No project names found in ${filePath}`);
+  }
+  return names;
+}
 
 export type ProjectRow = {
   id: string;
@@ -24,9 +37,11 @@ export type ProjectRow = {
 };
 
 /**
- * Insert demo projects if the table is empty.
- * Accepts any object that can insert a project row (SQLite adapter hook).
+ * Insert projects from samples/projects (or override path) if the caller table is empty.
  */
-export function seedDemoProjects(insertProject: (name: string) => ProjectRow): ProjectRow[] {
-  return DEMO_PROJECT_NAMES.map((name) => insertProject(name));
+export function seedDemoProjects(
+  insertProject: (name: string) => ProjectRow,
+  projectsFilePath: string = defaultProjectsFilePath(),
+): ProjectRow[] {
+  return loadProjectNames(projectsFilePath).map((name) => insertProject(name));
 }

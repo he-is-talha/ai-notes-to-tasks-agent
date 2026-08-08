@@ -11,6 +11,11 @@ import type { CreateTaskArgs } from "../schema/tool-args.js";
 import { err, ok } from "../schema/tool-result.js";
 import { normalizeProject } from "../schema/normalize.js";
 
+export type SqliteAdapterOptions = {
+  /** Override path to the projects catalog (default: samples/projects). */
+  projectsFilePath?: string;
+};
+
 type ProjectRow = {
   id: string;
   name: string;
@@ -32,7 +37,10 @@ export type SqliteAdapter = TaskAdapter & {
   close(): void;
 };
 
-export function createSqliteAdapter(dbPath: string): SqliteAdapter {
+export function createSqliteAdapter(
+  dbPath: string,
+  options: SqliteAdapterOptions = {},
+): SqliteAdapter {
   const db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
   db.exec(`
@@ -97,7 +105,7 @@ export function createSqliteAdapter(dbPath: string): SqliteAdapter {
         const row = { id: randomUUID(), name };
         insertProjectStmt.run(row);
         return row;
-      });
+      }, options.projectsFilePath);
       return inserted.length;
     },
 
