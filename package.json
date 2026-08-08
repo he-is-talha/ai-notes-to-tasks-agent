@@ -14,12 +14,14 @@
     "notes-to-tasks": "tsx src/cli.ts"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.2.0",
     "tsx": "^4.23.11",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.3",
     "zod": "^4.4.3"
   }
 }
