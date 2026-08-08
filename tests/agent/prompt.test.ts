@@ -11,6 +11,7 @@ describe("agent prompts", () => {
     expect(prompt).toContain("create_task");
     expect(prompt).toContain("YYYY-MM-DD");
     expect(prompt).toContain("Do not invent");
+    expect(prompt).toContain("MUST call tools");
   });
 
   it("user message wraps notes", () => {

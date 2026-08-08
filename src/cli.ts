@@ -4,21 +4,45 @@ import {
   formatCliHelp,
   parseCliArgs,
 } from "./cli/args.js";
+import { printRunOutput, runNotesToTasks } from "./cli/run.js";
+import { loadEnv } from "./config/env.js";
 
-function main(): void {
+async function main(): Promise<void> {
   try {
     const parsed = parseCliArgs(process.argv);
     if (parsed.help) {
       console.log(formatCliHelp(APP_NAME));
       return;
     }
-    const notes = parsed.notesPath ?? "(none)";
-    console.log(`${APP_NAME} mode=${parsed.mode} notes=${notes}`);
+
+    if (!parsed.notesPath) {
+      throw new CliArgsError(
+        "Missing --notes <path> (try --notes samples/messy-notes.md)",
+      );
+    }
+
+    const env = loadEnv(process.env);
+    console.log(
+      `${APP_NAME} mode=${parsed.mode} notes=${parsed.notesPath} model=${env.ollamaModel}`,
+    );
+
+    const result = await runNotesToTasks({
+      notesPath: parsed.notesPath,
+      mode: parsed.mode,
+      env,
+    });
+
+    printRunOutput(result, parsed.mode);
+    result.adapter.close();
+
+    if (result.report.stoppedReason === "model_error") {
+      process.exitCode = 1;
+    }
   } catch (error) {
-    const message = error instanceof CliArgsError ? error.message : String(error);
+    const message = error instanceof Error ? error.message : String(error);
     console.error(`${APP_NAME}: ${message}`);
     process.exitCode = 1;
   }
 }
 
-main();
+void main();
