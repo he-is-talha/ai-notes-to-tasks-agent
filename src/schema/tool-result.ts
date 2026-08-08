@@ -3,6 +3,7 @@ export const TOOL_ERROR_CODES = [
   "NOT_FOUND",
   "DUPLICATE_SKIPPED",
   "ADAPTER_ERROR",
+  "UNKNOWN_TOOL",
 ] as const;
 
 export type ToolErrorCode = (typeof TOOL_ERROR_CODES)[number];
