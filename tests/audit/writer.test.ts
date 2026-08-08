@@ -43,7 +43,7 @@ describe("audit writer", () => {
     appendAudit(filePath, {
       ts: "2026-08-09T00:00:00.000Z",
       run_id: runId,
-      model: "qwen2.5:7b",
+      model: "qwen3.5:4b",
       tool: "find_project",
       args: { query: "Payments" },
       result: {
@@ -56,7 +56,7 @@ describe("audit writer", () => {
     appendAudit(filePath, {
       ts: "2026-08-09T00:00:01.000Z",
       run_id: runId,
-      model: "qwen2.5:7b",
+      model: "qwen3.5:4b",
       tool: "create_task",
       args: {
         title: "Fix webhooks",
@@ -109,7 +109,7 @@ describe("dispatchTool audit wiring", () => {
       mode: "dry-run",
       runId: "dispatch-run-1",
       auditPath,
-      model: "qwen2.5:7b",
+      model: "qwen3.5:4b",
     };
 
     await dispatchTool("find_project", { query: "Payments" }, ctx);
@@ -127,7 +127,7 @@ describe("dispatchTool audit wiring", () => {
     const lines = readJsonl(auditPath);
     expect(lines).toHaveLength(2);
     expect(lines.every((e) => e.run_id === "dispatch-run-1")).toBe(true);
-    expect(lines.every((e) => e.model === "qwen2.5:7b")).toBe(true);
+    expect(lines.every((e) => e.model === "qwen3.5:4b")).toBe(true);
     expect(lines.every((e) => e.mode === "dry-run")).toBe(true);
     expect(lines.map((e) => e.tool)).toEqual(["find_project", "create_task"]);
     expect(lines[0]?.intended_call?.pathOrOp).toBe("sqlite.projects.find");

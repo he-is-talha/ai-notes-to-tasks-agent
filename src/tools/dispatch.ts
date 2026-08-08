@@ -37,7 +37,7 @@ export async function dispatchTool(
     appendAudit(ctx.auditPath, {
       ts: new Date().toISOString(),
       run_id: ctx.runId,
-      model: ctx.model ?? "qwen2.5:7b",
+      model: ctx.model ?? "qwen3.5:4b",
       tool: name,
       args: rawArgs,
       result,
