@@ -56,7 +56,7 @@ sequenceDiagram
   participant User
   participant CLI as cli.ts
   participant Run as cli/run.ts
-  participant Loop as agent/loop.ts
+  participant Agent as agent/loop.ts
   participant Prompt as agent/prompt.ts
   participant LLM as llm/provider.ts
   participant Ollama as Ollama qwen3.5:4b
@@ -69,30 +69,30 @@ sequenceDiagram
   User->>CLI: notes-to-tasks --execute --notes messy-notes.md
   CLI->>Run: runNotesToTasks(mode=execute)
   Run->>Adapt: seedIfEmpty()
-  Run->>Loop: runAgent(notes, ctx, llm, maxToolCalls)
-  Loop->>Prompt: system + prepareNotesForModel(notes)
+  Run->>Agent: runAgent(notes, ctx, llm, maxToolCalls)
+  Agent->>Prompt: system + prepareNotesForModel(notes)
   loop until no tool_calls or budget
-    Loop->>LLM: chat(messages, ollamaTools())
+    Agent->>LLM: chat(messages, ollamaTools())
     LLM->>Ollama: POST /api/chat tools=[find_project, create_task]
     Ollama-->>LLM: message + tool_calls
-    LLM-->>Loop: ChatResponse
+    LLM-->>Agent: ChatResponse
     alt tool_calls present
-      Loop->>Disp: dispatchTool(name, args)
+      Agent->>Disp: dispatchTool(name, args)
       Disp->>Zod: safeParse args
       alt invalid
         Zod-->>Disp: VALIDATION_ERROR
         Disp->>Audit: appendAudit
-        Disp-->>Loop: ToolResult error
+        Disp-->>Agent: ToolResult error
       else valid
         Disp->>Adapt: findProject / createTask
         Adapt->>DB: read / insert-or-dedupe
         Adapt-->>Disp: ok data
         Disp->>Audit: appendAudit
-        Disp-->>Loop: ToolResult ok
+        Disp-->>Agent: ToolResult ok
       end
-      Loop->>Loop: append role=tool message
+      Agent->>Agent: append role=tool message
     else done
-      Loop-->>Run: AgentReport
+      Agent-->>Run: AgentReport
     end
   end
   Run-->>CLI: print intended calls + counts
