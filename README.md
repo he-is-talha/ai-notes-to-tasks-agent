@@ -4,9 +4,9 @@
 
 Turns messy standup/meeting notes into real tasks through exactly two Zod-validated tools — with dry-run by default, a bounded agent loop, and an append-only audit log.
 
-![Notes-to-tasks: messy-notes → find_project/create_task → dry-run then execute with dedupe](docs/demo.gif)
+![Notes-to-tasks: messy-notes → execute → 12 rows in SQLite](docs/demo.gif)
 
-> GIF callouts: `>>> KEY: notes=samples/messy-notes.md` → dry-run intended creates (12) → execute `tasks_after=12` → `duplicate_skips=12` on re-run → audit JSONL.
+> Demo: `docs/demo.gif` / `docs/demo.mp4` — hook → notes → projects → execute (12 tasks) → SQLite dump → audit.
 
 ## What it does
 
